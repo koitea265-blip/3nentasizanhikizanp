@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>３年 たし算・ひき算 筆算マスター</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500&family=Nunito:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 基本設定 --- */
+        body {
+            font-family: 'Kiwi Maru', serif;
+            background-color: #f0fdf4; /* green-50 */
+            background-image: radial-gradient(#dcfce7 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+        
+        .number-font {
+            font-family: 'Nunito', sans-serif;
+        }
+        
+        /* 教科書体指定 */
+        .text-kyokasho {
+            font-family: 'Kiwi Maru', serif;
+        }
+
+        /* ルビ */
+        ruby { ruby-position: over; }
+        rt { font-size: 0.6em; color: #64748b; }
+
+        /* --- UIコンポーネント --- */
+        .bubble-btn {
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .bubble-btn:active { transform: scale(0.95); }
+
+        /* 吹き出し */
+        .speech-bubble {
+            position: relative;
+            background: #ffffff;
+            border: 3px solid #86efac;
+            border-radius: 1.5rem;
+            padding: 12px 16px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: 50%; bottom: -12px; transform: translateX(-50%);
+            border-width: 12px 10px 0; border-style: solid;
+            border-color: #86efac transparent transparent;
+        }
+
+        /* --- アニメーション --- */
+        .float-anim { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .animate-pop { animation: pop 0.3s ease-in-out; }
+
+        /* 正解の赤丸アニメーション */
+        @keyframes drawCircle {
+            0% { stroke-dasharray: 0, 1000; opacity: 0; transform: scale(0.5); }
+            100% { stroke-dasharray: 1000, 0; opacity: 1; transform: scale(1); }
+        }
+        .circle-anim {
+            animation: drawCircle 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            transform-origin: center;
+        }
+
+        /* オーラ */
+        @keyframes shine-spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); opacity: 0.8; }
+        }
+        .legend-aura {
+            animation: shine-spin 4s linear infinite;
+            background: radial-gradient(circle, rgba(253,224,71,0.6) 0%, rgba(234,179,8,0.3) 60%, rgba(255,255,255,0) 80%);
+            box-shadow: 0 0 30px 10px rgba(250, 204, 21, 0.4);
+        }
+
+        /* --- キャラクター構成 --- */
+        .char-wrapper { position: relative; display: inline-block; z-index: 10; }
+        .char-body { position: relative; z-index: 10; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.1)); }
+        .accessory {
+            position: absolute; pointer-events: none; z-index: 20;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .aura-bg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 150%; height: 150%; border-radius: 50%; z-index: -10; pointer-events: none;
+        }
+        .red-cape {
+            position: absolute; bottom: 0px; left: 50%; transform: translateX(-50%);
+            width: 140%; height: 90%; background: #EF4444; border-radius: 40% 40% 10% 10%;
+            z-index: -5; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- 方眼グリッド設定 --- */
+        #hissan-wrapper {
+            position: relative;
+            width: fit-content;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 4px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .hissan-grid {
+            display: grid;
+            grid-template-rows: repeat(3, 1fr);
+            width: 100%;
+            max-width: 500px; 
+            background-color: white;
+            border: 3px solid #93c5fd;
+            background-image: 
+                linear-gradient(#bfdbfe 2px, transparent 2px), 
+                linear-gradient(90deg, #bfdbfe 2px, transparent 2px);
+        }
+
+        .grid-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Kiwi Maru', serif;
+            font-size: 3.2rem;
+            font-weight: 500;
+            line-height: 1;
+            color: #1e293b;
+            position: relative;
+            aspect-ratio: 1 / 1;
+            padding-bottom: 0.1em;
+            overflow: visible;
+        }
+
+        /* ひっ算の横線 */
+        .hissan-line::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 4px;
+            background-color: #334155;
+            z-index: 10;
+        }
+
+        /* --- メモキャンバス --- */
+        canvas#memo-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 50;
+            touch-action: none;
+            cursor: crosshair;
+            pointer-events: none;
+        }
+        canvas#memo-canvas.active {
+            pointer-events: auto;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            border: 2px dashed #86efac;
+        }
+
+        /* --- テンキー --- */
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.4rem;
+            width: 100%;
+            max-width: 280px;
+            padding: 0.2rem;
+            margin: 0 auto;
+        }
+        .num-key {
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.8rem;
+            padding: 0.5rem 0;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #475569;
+            box-shadow: 0 2px 0 #cbd5e1;
+            transition: all 0.1s;
+        }
+        .num-key:active {
+            transform: translateY(2px);
+            box-shadow: none;
+            background-color: #f1f5f9;
+        }
+        .num-key.enter-key {
+            background-color: #86efac;
+            color: #166534;
+            border-color: #4ade80;
+            box-shadow: 0 2px 0 #22c55e;
+            font-size: 1.1rem;
+            font-family: 'Kiwi Maru', serif;
+        }
+        .num-key.enter-key:active {
+            background-color: #4ade80;
+            box-shadow: none;
+        }
+        .num-key.del-key {
+            color: #ef4444;
+            background-color: #fef2f2;
+            border-color: #fecaca;
+            box-shadow: 0 2px 0 #fca5a5;
+            font-size: 1.1rem;
+            font-family: 'Kiwi Maru', serif;
+        }
+
+        /* 正解の赤丸オーバーレイ */
+        #correct-mark {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-2 sm:p-4">
+
+    <!-- アプリコンテナ -->
+    <div id="app" class="bg-white/95 backdrop-blur-sm p-3 rounded-[2rem] shadow-2xl border-4 border-green-200 w-full h-[95vh] max-h-[800px] max-w-md flex flex-col relative overflow-hidden">
+
+        <!-- ====================
+             スタート画面
+        ==================== -->
+        <div id="start-screen" class="absolute inset-0 z-[50] bg-white flex flex-col items-center justify-between p-4 pb-8 text-center rounded-[2rem]">
+            <div class="mt-4 w-full flex flex-col items-center">
+                <span class="inline-block bg-green-500 text-white text-sm font-bold px-4 py-1.5 rounded-full mb-3 shadow-md tracking-wider">
+                    算数ドリル
+                </span>
+                <h1 class="text-3xl font-bold text-green-700 tracking-wider leading-snug drop-shadow-sm mb-1">
+                    ３年　たし算・ひき算<br>筆算マスター
+                </h1>
+                <p class="text-gray-400 font-bold text-xs mt-1">いっしょに勉強する友だちを選ぼう！</p>
+            </div>
+
+            <div class="flex gap-4 my-2">
+                <button class="bubble-btn w-16 h-16 bg-blue-50 rounded-2xl text-3xl flex items-center justify-center border-2 border-blue-100 hover:border-blue-300 ring-offset-2 focus:ring-2 ring-blue-200" onclick="selectChar('🐧', 'ペンギン')">🐧</button>
+                <button class="bubble-btn w-16 h-16 bg-yellow-50 rounded-2xl text-3xl flex items-center justify-center border-2 border-yellow-100 hover:border-yellow-300 ring-offset-2 focus:ring-2 ring-yellow-200" onclick="selectChar('🦉', 'フクロウ')">🦉</button>
+                <button class="bubble-btn w-16 h-16 bg-orange-50 rounded-2xl text-3xl flex items-center justify-center border-2 border-orange-100 hover:border-orange-300 ring-offset-2 focus:ring-2 ring-orange-200" onclick="selectChar('🧸', 'クマさん')">🧸</button>
+            </div>
+
+            <div class="flex flex-col items-center w-full flex-grow justify-center relative">
+                <div class="speech-bubble mb-6 w-64 min-h-[60px] flex items-center justify-center z-20">
+                    <p id="start-char-talk" class="text-gray-700 font-bold text-sm leading-snug">筆算ならまかせて！</p>
+                </div>
+                <div class="char-wrapper text-8xl float-anim mb-8" id="start-char-view">
+                    <div id="start-aura"></div>
+                    <span id="preview-emoji" class="char-body">🐧</span>
+                    <div id="start-accessories"></div>
+                </div>
+                
+                <div class="flex flex-col items-center gap-4 w-full px-4">
+                    <div id="title-label" class="text-lg font-bold text-green-600 bg-green-50 px-6 py-1.5 rounded-full border border-green-200 shadow-sm">
+                        かけだしペンギン
+                    </div>
+                    <div class="flex items-center gap-3 w-full justify-center bg-gray-50 p-2 rounded-xl">
+                        <label class="text-xs font-bold text-gray-500 whitespace-nowrap">レベル:</label>
+                        <select id="level-select" onchange="changeLevel(this.value)" class="flex-grow bg-white px-4 py-2 rounded-lg text-gray-700 font-bold text-sm border-2 border-gray-200 outline-none focus:border-green-400 cursor-pointer w-full">
+                            <!-- JS生成 -->
+                        </select>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 w-full max-w-[240px]">
+                        <div class="flex justify-between w-full text-[10px] font-bold text-gray-400 px-1">
+                            <span>これまでの合計</span>
+                            <span><span id="total-solved-display" class="text-lg text-green-600">0</span>問 正解</span>
+                        </div>
+                        <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                            <div id="progress-fill" class="h-full bg-gradient-to-r from-green-300 to-green-500 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="bubble-btn w-full h-16 bg-gradient-to-r from-green-400 to-teal-500 text-white text-2xl font-bold rounded-2xl shadow-lg shadow-green-200/50 mt-2 flex items-center justify-center gap-2" onclick="startGame()">
+                <span class="text-3xl">▶</span> スタート！
+            </button>
+        </div>
+
+        <!-- ====================
+             ゲーム画面 (筆算)
+        ==================== -->
+        <div id="game-ui" class="hidden h-full flex flex-col justify-between relative">
+            
+            <!-- 正解の赤丸レイヤー (初期は空) -->
+            <div id="correct-mark" class="hidden">
+            </div>
+
+            <!-- ヘッダー -->
+            <div class="flex items-center justify-between mb-2 shrink-0 z-30 pt-1 px-1">
+                <button onclick="backToStart()" class="bubble-btn flex items-center gap-1 text-gray-500 text-xs font-bold hover:text-green-600 px-3 py-2 rounded-xl hover:bg-gray-50 transition">
+                    <span>🏠</span> 戻る
+                </button>
+                
+                <!-- 中央: レベル情報 -->
+                <div class="flex gap-1">
+                    <div class="bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold text-xs border border-green-200 shadow-sm flex items-center">
+                        Lv.<span id="display-level" class="text-base ml-0.5">1</span>
+                    </div>
+                    <div class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-bold text-xs border border-yellow-200 shadow-sm flex items-center">
+                        残<span id="display-remain" class="text-base ml-0.5">10</span>
+                    </div>
+                </div>
+
+                <!-- 右側: メモ操作 -->
+                <div class="flex gap-2">
+                    <button onclick="clearMemo()" id="header-clear-btn" class="hidden bubble-btn bg-gray-100 text-gray-600 text-xs font-bold px-3 py-2 rounded-full border border-gray-300 shadow-sm hover:bg-gray-200 transition">
+                        🗑️
+                    </button>
+                    <button onclick="toggleMemo()" id="memo-btn" class="bubble-btn flex items-center gap-1 bg-blue-100 text-blue-600 text-xs font-bold px-4 py-2 rounded-full border border-blue-200 shadow-sm hover:bg-blue-200 transition">
+                        <span>✏️</span> メモ
+                    </button>
+                </div>
+            </div>
+
+            <!-- キャラ表示（小さめ） -->
+            <div class="flex items-center justify-center -mt-2 mb-0 z-20 pointer-events-none h-16">
+                 <div class="char-wrapper text-5xl" id="game-char-view">
+                    <div id="game-aura"></div>
+                    <span id="game-char" class="char-body">🐧</span>
+                    <div id="game-accessories"></div>
+                </div>
+            </div>
+
+            <!-- 問題の種類ラベル -->
+            <div class="flex justify-center w-full mb-1">
+                <span id="problem-type-label" class="bg-indigo-100 text-indigo-700 text-xs font-bold px-4 py-1 rounded-full border border-indigo-200">
+                    2けた ＋ 2けた
+                </span>
+            </div>
+
+            <!-- メインエリア (方眼筆算) -->
+            <div class="flex-grow flex flex-col items-center relative z-10 overflow-y-auto">
+                
+                <!-- 問題表示エリア -->
+                <div class="w-full flex justify-center items-center mb-1 px-1 py-2">
+                    <div id="hissan-wrapper">
+                        <div id="mathContainer">
+                            <!-- ここにグリッドが生成される -->
+                        </div>
+                        <!-- メモ用Canvas -->
+                        <canvas id="memo-canvas"></canvas>
+                        <!-- 旧消去ボタンは削除し、ヘッダーに移動 -->
+                    </div>
+                </div>
+
+                <!-- 答え表示 & フィードバックエリア -->
+                <div class="w-full max-w-[280px] flex flex-col items-center gap-2 mb-1">
+                    
+                    <!-- 入力値表示ボックス -->
+                    <div id="input-display" class="w-full h-20 bg-white border-4 border-green-300 rounded-2xl flex items-center justify-center text-5xl font-bold text-slate-700 shadow-inner text-kyokasho tracking-widest mt-1">
+                        
+                    </div>
+
+                    <!-- フィードバック -->
+                    <div id="feedbackArea" class="h-5 w-full flex items-center justify-center text-center">
+                        <p class="text-slate-500 text-xs font-bold">答えを入力してね</p>
+                    </div>
+                </div>
+
+                <!-- テンキー (3列レイアウト・コンパクト化) -->
+                <div class="numpad-grid">
+                    <button class="num-key" onclick="inputNum('7')">7</button>
+                    <button class="num-key" onclick="inputNum('8')">8</button>
+                    <button class="num-key" onclick="inputNum('9')">9</button>
+                    
+                    <button class="num-key" onclick="inputNum('4')">4</button>
+                    <button class="num-key" onclick="inputNum('5')">5</button>
+                    <button class="num-key" onclick="inputNum('6')">6</button>
+                    
+                    <button class="num-key" onclick="inputNum('1')">1</button>
+                    <button class="num-key" onclick="inputNum('2')">2</button>
+                    <button class="num-key" onclick="inputNum('3')">3</button>
+                    
+                    <button class="num-key" onclick="inputNum('0')">0</button>
+                    <button class="num-key del-key" onclick="inputNum('BS')">けす</button>
+                    <button class="num-key enter-key" onclick="checkAnswer()">OK</button>
+                </div>
+
+                <div class="h-1"></div> <!-- スペーサー最小化 -->
+            </div>
+        </div>
+
+        <!-- ロック通知 -->
+        <div id="lock-modal" class="hidden fixed inset-0 z-[200] bg-black/40 flex items-center justify-center p-6 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl text-center max-w-[280px] animate-pop">
+                <div class="text-5xl mb-4">🔒</div>
+                <p id="lock-message" class="text-gray-700 font-bold mb-6 text-lg">
+                    前のレベルを<br>クリアしてね！
+                </p>
+                <button onclick="closeLockModal()" class="w-full py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg active:scale-95">わかった！</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 状態管理 ---
+        const APP_ID = 'hissan_master_final_v13'; 
+        const MAX_LEVEL = 10;
+
+        // オーディオコンテキスト
+        let audioCtx = null;
+
+        let state = {
+            charEmoji: '🐧',
+            charName: 'ペンギン',
+            level: 1,
+            maxUnlockedLevel: 1,
+            totalSolved: 0,
+            solvedInLevel: 0,
+            currentA: 0,
+            currentB: 0,
+            isAddition: true,
+            mistakeCount: 0,
+            isMemoMode: false,
+            gridCols: 3,
+            userInput: ""
+        };
+
+        // --- 音声合成 ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playDing() {
+            initAudio();
+            if (!audioCtx) return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1318, t); // E6
+            osc.frequency.setValueAtTime(1046, t + 0.15); // C6
+            gain.gain.setValueAtTime(0.1, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + 0.6);
+        }
+
+        function playBuzzer() {
+            initAudio();
+            if (!audioCtx) return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, t);
+            osc.frequency.linearRampToValueAtTime(100, t + 0.3);
+            gain.gain.setValueAtTime(0.1, t);
+            gain.gain.linearRampToValueAtTime(0.001, t + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + 0.3);
+        }
+
+        // --- データ永続化 ---
+        function save() {
+            localStorage.setItem(APP_ID, JSON.stringify({
+                level: state.level,
+                maxUnlockedLevel: state.maxUnlockedLevel,
+                charEmoji: state.charEmoji,
+                charName: state.charName,
+                totalSolved: state.totalSolved,
+                solvedInLevel: state.solvedInLevel
+            }));
+        }
+
+        function load() {
+            try {
+                const data = localStorage.getItem(APP_ID);
+                if (data) {
+                    const p = JSON.parse(data);
+                    state.level = p.level || 1;
+                    state.maxUnlockedLevel = p.maxUnlockedLevel || 1;
+                    state.charEmoji = p.charEmoji || '🐧';
+                    state.charName = p.charName || 'ペンギン';
+                    state.totalSolved = p.totalSolved || 0;
+                    state.solvedInLevel = p.solvedInLevel || 0;
+                }
+            } catch (e) { console.warn(e); }
+            
+            // ★デバッグ設定：Lv5まで解放（Lv6以上はロック）
+            state.maxUnlockedLevel = 5; 
+            if (state.level > state.maxUnlockedLevel) state.level = state.maxUnlockedLevel;
+
+            initLevelSelect();
+            updateTitleAndPreview();
+        }
+
+        // --- キャラクター & アクセサリー ロジック ---
+        // 帽子位置を全体的に下げる調整
+        const charOffsets = {
+            '🐧': { hatY: { start: -5, game: -2 }, chestY: { start: 15, game: 10 } },
+            '🦉': { hatY: { start: -2, game: 0 }, chestY: { start: 14, game: 10 } },
+            '🧸': { hatY: { start: -8, game: -4 }, chestY: { start: 8, game: 4 } }
+        };
+
+        function updateAccessories(currentLevel) {
+            const startAcc = document.getElementById('start-accessories');
+            const gameAcc = document.getElementById('game-accessories');
+            if(!startAcc || !gameAcc) return;
+            startAcc.innerHTML = ''; gameAcc.innerHTML = '';
+            
+            const startAura = document.getElementById('start-aura');
+            const gameAura = document.getElementById('game-aura');
+            
+            const getAuraClass = (lv) => {
+                if (lv >= 10) return "aura-bg legend-aura";
+                if (lv >= 8) return "aura-bg bg-yellow-200 opacity-60";
+                if (lv >= 6) return "aura-bg bg-gray-200 opacity-60";
+                if (lv >= 4) return "aura-bg bg-orange-200 opacity-50";
+                return "";
+            };
+            
+            const lv = currentLevel || state.level;
+            const auraClass = getAuraClass(lv);
+            if(startAura) startAura.className = auraClass;
+            if(gameAura) gameAura.className = auraClass;
+
+            const offsets = charOffsets[state.charEmoji] || charOffsets['🐧'];
+            
+            // レベルごとのアクセサリー設定
+            const configs = {
+                // Lv1: 初心者マーク(胸)
+                1: { emoji: '🔰', start: `bottom:${offsets.chestY.start}px; left:50%; transform:translateX(-50%); font-size:1.5rem;`, game: `bottom:${offsets.chestY.game}px; left:50%; transform:translateX(-50%); font-size:0.9rem;` }, 
+                // Lv2: 帽子(頭)
+                2: { emoji: '🧢', start: `top:${offsets.hatY.start}px; left:50%; transform:translateX(-50%); font-size:1.6rem;`, game: `top:${offsets.hatY.game}px; left:50%; transform:translateX(-50%); font-size:0.9rem;` }, 
+                // Lv3: 計算博士(博士帽子)
+                3: { emoji: '🎓', start: `top:${offsets.hatY.start}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `top:${offsets.hatY.game}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                // Lv4: 銅の筆算師(銅メダル+博士帽子)
+                4: { multi: [
+                    { emoji: '🥉', start: `bottom:${offsets.chestY.start - 8}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `bottom:${offsets.chestY.game - 4}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '🎓', start: `top:${offsets.hatY.start}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `top:${offsets.hatY.game}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }
+                ]},
+                // Lv5: 銀の筆算師(銀メダル+博士帽子)
+                5: { multi: [
+                    { emoji: '🥈', start: `bottom:${offsets.chestY.start - 8}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `bottom:${offsets.chestY.game - 4}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '🎓', start: `top:${offsets.hatY.start}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `top:${offsets.hatY.game}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }
+                ]},
+                // Lv6: 金の筆算師(金メダル+博士帽子)
+                6: { multi: [
+                    { emoji: '🥇', start: `bottom:${offsets.chestY.start - 8}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `bottom:${offsets.chestY.game - 4}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '🎓', start: `top:${offsets.hatY.start}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `top:${offsets.hatY.game}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }
+                ]},
+                // Lv7: 黄金の賢者(星(胸)+杖+博士帽子)
+                7: { multi: [
+                    { emoji: '🌟', start: `bottom:${offsets.chestY.start - 8}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `bottom:${offsets.chestY.game - 4}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '🪄', start: 'top:45px; right:-20px; font-size:2.0rem; transform: rotate(15deg);', game: 'top:22px; right:-10px; font-size:1.2rem; transform: rotate(15deg);' },
+                    { emoji: '🎓', start: `top:${offsets.hatY.start}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `top:${offsets.hatY.game}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }
+                ]},
+                // Lv8: 筆算マスター(勲章(胸)+杖+博士帽子)
+                8: { multi: [
+                    { emoji: '🎖️', start: `bottom:${offsets.chestY.start - 10}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `bottom:${offsets.chestY.game - 5}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '🪄', start: 'top:45px; right:-20px; font-size:2.0rem; transform: rotate(15deg);', game: 'top:22px; right:-10px; font-size:1.2rem; transform: rotate(15deg);' },
+                    { emoji: '🎓', start: `top:${offsets.hatY.start}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `top:${offsets.hatY.game}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }
+                ]},
+                // Lv9: (ダイヤ(胸)+杖+王冠)
+                9: { multi: [
+                    { emoji: '👑', start: `top:${offsets.hatY.start - 4}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `top:${offsets.hatY.game - 2}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '💎', start: `bottom:${offsets.chestY.start}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `bottom:${offsets.chestY.game}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '🪄', start: 'top:45px; right:-20px; font-size:2.0rem; transform: rotate(15deg);', game: 'top:22px; right:-10px; font-size:1.2rem; transform: rotate(15deg);' }
+                ]},
+                // Lv10: (ダイヤ(胸)+杖+王冠+マント)
+                10: { multi: [
+                    { emoji: '👑', start: `top:${offsets.hatY.start - 4}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `top:${offsets.hatY.game - 2}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '💎', start: `bottom:${offsets.chestY.start}px; left:50%; transform:translateX(-50%); font-size:1.8rem;`, game: `bottom:${offsets.chestY.game}px; left:50%; transform:translateX(-50%); font-size:1.0rem;` }, 
+                    { emoji: '🪄', start: 'top:45px; right:-20px; font-size:2.0rem; transform: rotate(15deg);', game: 'top:22px; right:-10px; font-size:1.2rem; transform: rotate(15deg);' }, 
+                    { type: 'css', className: 'red-cape' }
+                ]}
+            };
+
+            const config = configs[currentLevel || state.level] || (currentLevel > 10 ? configs[10] : null);
+            if (!config) return;
+
+            const createEl = (item, style) => {
+                const div = document.createElement('div');
+                if (item.type === 'css') {
+                    div.className = item.className;
+                } else {
+                    div.className = 'accessory';
+                    div.style = style;
+                    div.innerText = item.emoji;
+                }
+                return div;
+            };
+
+            if (config.multi) {
+                config.multi.forEach(c => {
+                    if (c.type === 'css') {
+                        startAcc.appendChild(createEl(c, null));
+                        gameAcc.appendChild(createEl(c, null).cloneNode(true));
+                    } else {
+                        startAcc.appendChild(createEl({emoji:c.emoji}, c.start));
+                        gameAcc.appendChild(createEl({emoji:c.emoji}, c.game));
+                    }
+                });
+            } else if (config.emoji) {
+                startAcc.appendChild(createEl({emoji:config.emoji}, config.start));
+                gameAcc.appendChild(createEl({emoji:config.emoji}, config.game));
+            }
+        }
+
+        function getLevelTitle(lv) {
+            const titles = {
+                1: "かけだし", 2: "見習い", 3: "計算博士", 4: "銅の筆算師",
+                5: "銀の筆算師", 6: "金の筆算師", 7: "黄金の賢者",
+                8: "筆算マスター", 9: "天才筆算師", 10: "伝説の筆算王"
+            };
+            return titles[lv] || "かけだし";
+        }
+
+        function updateTitleAndPreview() {
+            document.getElementById('preview-emoji').innerText = state.charEmoji;
+            document.getElementById('game-char').innerText = state.charEmoji;
+            
+            const titleText = getLevelTitle(state.level) + " " + state.charName;
+            const titleEl = document.getElementById('title-label');
+            titleEl.innerText = titleText;
+            
+            if (state.level >= 10) titleEl.className = "text-lg font-bold text-yellow-600 bg-yellow-100 px-6 py-1.5 rounded-full border-2 border-yellow-400";
+            else if (state.level >= 6) titleEl.className = "text-lg font-bold text-blue-500 bg-blue-50 px-6 py-1.5 rounded-full border-2 border-blue-200";
+            else titleEl.className = "text-lg font-bold text-green-600 bg-green-50 px-6 py-1.5 rounded-full border border-green-200";
+
+            document.getElementById('level-select').value = state.level;
+            document.getElementById('total-solved-display').innerText = state.totalSolved;
+            
+            const progress = Math.min(100, (state.totalSolved / 100) * 100);
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+            
+            updateAccessories(state.level);
+        }
+
+        function initLevelSelect() {
+            const select = document.getElementById('level-select');
+            select.innerHTML = '';
+            
+            // レベル説明文 (ユーザー要望に合わせる)
+            const levelDescriptions = [
+                "2けた＋2けた (くり上がりなし)",
+                "2けた－2けた (くり下がりなし)",
+                "2けた＋2けた (くり上がりあり)",
+                "2けた－2けた (くり下がりあり)",
+                "3けたのたし算",
+                "3けたのひき算",
+                "3けた＋3けた",
+                "3けた－3けた",
+                "3けたひき算 (難)",
+                "4けたの計算"
+            ];
+
+            for(let i = 1; i <= MAX_LEVEL; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = `${i}：${levelDescriptions[i-1]}`;
+                if (i > state.maxUnlockedLevel) opt.innerText += " 🔒";
+                select.appendChild(opt);
+            }
+        }
+
+        function changeLevel(val) {
+            const newLv = parseInt(val);
+            if (newLv > state.maxUnlockedLevel) {
+                document.getElementById('lock-modal').classList.remove('hidden');
+                document.getElementById('lock-message').innerHTML = `Lv.${state.maxUnlockedLevel}を<br>クリアしてね！`;
+                document.getElementById('level-select').value = state.level;
+                return;
+            }
+            state.level = newLv;
+            state.solvedInLevel = 0;
+            save();
+            updateTitleAndPreview();
+        }
+
+        function selectChar(emoji, name) {
+            state.charEmoji = emoji;
+            state.charName = name;
+            save();
+            updateTitleAndPreview();
+        }
+
+        function closeLockModal() {
+            document.getElementById('lock-modal').classList.add('hidden');
+        }
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            generateProblem();
+        }
+
+        function backToStart() {
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('game-ui').classList.add('hidden');
+            save();
+            updateTitleAndPreview();
+            if(state.isMemoMode) toggleMemo();
+        }
+
+        // --- テンキー入力 ---
+        function inputNum(val) {
+            if (val === 'BS') {
+                state.userInput = state.userInput.slice(0, -1);
+            } else {
+                if (state.userInput.length < 6) { // 最大文字数制限
+                    state.userInput += val;
+                }
+            }
+            updateInputDisplay();
+        }
+
+        function updateInputDisplay() {
+            document.getElementById('input-display').innerText = state.userInput;
+        }
+
+        // --- 問題生成ロジック ---
+        function generateProblem() {
+            const lv = state.level;
+            
+            // 問題パターン定義
+            if (lv === 1) { state.isAddition = true; setNums(11,88, 11,88); } 
+            else if (lv === 2) { state.isAddition = false; setNums(20,99, 10,90); }
+            else if (lv === 3) { state.isAddition = true; setNums(15,85, 15,85); }
+            else if (lv === 4) { state.isAddition = false; setNums(20,95, 11,94); }
+            else if (lv === 5) { state.isAddition = true; state.currentA=r(100,500); state.currentB=r(50,400); }
+            else if (lv === 6) { state.isAddition = false; state.currentA=r(120,900); state.currentB=r(20, state.currentA-50); }
+            else if (lv === 7) { state.isAddition = true; state.currentA=r(350,850); state.currentB=r(350,850); }
+            else if (lv === 8) { state.isAddition = false; state.currentA=r(400,950); state.currentB=r(250, state.currentA-50); }
+            else if (lv === 9) { 
+                state.isAddition = false; 
+                state.currentA = r(2,9)*100; state.currentB = r(111, state.currentA-10);
+            }
+            else { 
+                state.isAddition = Math.random() > 0.5;
+                state.currentA = r(1000, 4500); state.currentB = r(500, 4500);
+            }
+
+            // 簡単な検証
+            if (!state.isAddition && state.currentA < state.currentB) {
+                [state.currentA, state.currentB] = [state.currentB, state.currentA];
+            }
+            if (lv === 1) {
+                while ((state.currentA % 10) + (state.currentB % 10) >= 10) state.currentB = r(11,88);
+            }
+            if (lv === 2) {
+                while ((state.currentA % 10) < (state.currentB % 10)) state.currentB = r(10, state.currentA-10);
+            }
+
+            state.mistakeCount = 0;
+            state.userInput = "";
+            updateInputDisplay();
+            
+            // 問題種類の表示更新
+            updateProblemLabel();
+
+            updateGameUI();
+            renderGridMath();
+            
+            // 赤丸を確実にリセット
+            const mark = document.getElementById('correct-mark');
+            mark.classList.add('hidden');
+            mark.innerHTML = ''; 
+            
+            setMessage("答えを入力してね", "text-slate-500");
+        }
+
+        function setNums(amin, amax, bmin, bmax) {
+            state.currentA = r(amin, amax);
+            state.currentB = r(bmin, bmax);
+        }
+
+        function r(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        function updateProblemLabel() {
+            const da = state.currentA.toString().length;
+            const db = state.currentB.toString().length;
+            const op = state.isAddition ? "＋" : "－";
+            document.getElementById('problem-type-label').innerText = `${da}けた ${op} ${db}けた`;
+        }
+
+        // --- グリッド描画 ---
+        function renderGridMath() {
+            const container = document.getElementById('mathContainer');
+            container.innerHTML = '';
+
+            const maxVal = Math.max(state.currentA, state.currentB);
+            let digits = maxVal.toString().length;
+            let cols = digits + 1;
+            if (cols < 3) cols = 3;
+            if (cols > 5) cols = 5;
+            state.gridCols = cols;
+
+            const grid = document.createElement('div');
+            grid.className = 'hissan-grid';
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.style.backgroundSize = `calc(100% / ${cols}) calc(100% / 3)`;
+            // 親要素の幅に合わせて最大化
+            grid.style.width = '100%';
+
+            // セル作成
+            const totalCells = cols * 3;
+            const cells = [];
+            for (let i = 0; i < totalCells; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                if (i >= cols && i < cols * 2) cell.classList.add('hissan-line');
+                grid.appendChild(cell);
+                cells.push(cell);
+            }
+
+            const strA = state.currentA.toString().split('');
+            const strB = state.currentB.toString().split('');
+            // 全角記号に変更
+            const op = state.isAddition ? '＋' : '－';
+
+            // 1行目
+            let offsetA = cols - strA.length;
+            strA.forEach((num, idx) => { cells[offsetA + idx].innerText = num; });
+
+            // 2行目
+            let offsetB = cols + (cols - strB.length);
+            if (offsetB - 1 >= cols) cells[offsetB - 1].innerText = op;
+            else cells[cols].innerText = op;
+
+            strB.forEach((num, idx) => { cells[offsetB + idx].innerText = num; });
+
+            container.appendChild(grid);
+            setTimeout(resizeCanvas, 50);
+        }
+
+        function checkAnswer() {
+            if (state.userInput === '') return;
+            const userAns = parseInt(state.userInput, 10);
+            const correctAns = state.isAddition ? state.currentA + state.currentB : state.currentA - state.currentB;
+
+            if (userAns === correctAns) {
+                // 正解
+                state.totalSolved++;
+                state.solvedInLevel++;
+                
+                playDing();
+                
+                // 一重の大きな赤丸を描画して表示
+                const mark = document.getElementById('correct-mark');
+                mark.innerHTML = `
+                    <svg width="250" height="250" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#ef4444" stroke-width="8" class="circle-anim" stroke-linecap="round" />
+                    </svg>
+                `;
+                mark.classList.remove('hidden');
+                
+                setMessage("🎉 せいかい！", "text-green-600 font-bold");
+                
+                // メモを消す
+                clearMemo();
+
+                if (state.solvedInLevel >= 10) {
+                    if (state.level < MAX_LEVEL) {
+                        if (state.level >= state.maxUnlockedLevel) state.maxUnlockedLevel++;
+                        state.level++;
+                        state.solvedInLevel = 0;
+                        setTimeout(() => {
+                            alert(`おめでとう！ レベル${state.level} に上がったよ！`);
+                            save();
+                            updateTitleAndPreview();
+                            generateProblem();
+                        }, 1000);
+                        return;
+                    }
+                }
+                save();
+                updateGameUI();
+                setTimeout(generateProblem, 1200); 
+                
+            } else {
+                // 間違い
+                state.mistakeCount++;
+                playBuzzer();
+                
+                let feedback = "もういちど！";
+                if (Math.abs(userAns - correctAns) === 10 || Math.abs(userAns - correctAns) === 100) {
+                    feedback = "繰り上がり・繰り下がりをチェック！";
+                } else if (state.userInput.slice(-1) !== correctAns.toString().slice(-1)) {
+                    feedback = "一の位がちがうかも？";
+                }
+
+                setMessage(`😢 ${feedback}`, "text-orange-600 font-bold");
+                
+                if (state.mistakeCount >= 2) {
+                    const hint = state.isAddition ? "一の位からたしてみて！" : "位を借りてこよう！";
+                    setMessage(`💡 ${hint}`, "text-blue-500 font-bold");
+                }
+            }
+        }
+
+        function setMessage(msg, cls) {
+            document.getElementById('feedbackArea').innerHTML = `<p class="${cls}">${msg}</p>`;
+        }
+
+        function updateGameUI() {
+            document.getElementById('display-level').innerText = state.level;
+            document.getElementById('display-remain').innerText = Math.max(0, 10 - state.solvedInLevel);
+        }
+
+        // --- メモ機能 ---
+        const canvas = document.getElementById('memo-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        function toggleMemo() {
+            state.isMemoMode = !state.isMemoMode;
+            const btn = document.getElementById('memo-btn');
+            const clearBtn = document.getElementById('header-clear-btn'); // ヘッダーのボタンを取得
+            
+            if (state.isMemoMode) {
+                canvas.classList.add('active');
+                if(clearBtn) clearBtn.classList.remove('hidden'); // 表示
+                btn.innerHTML = '<span>✅</span> 完了';
+                btn.classList.replace('bg-blue-100', 'bg-green-100');
+                btn.classList.replace('text-blue-600', 'text-green-800');
+                resizeCanvas();
+            } else {
+                canvas.classList.remove('active');
+                if(clearBtn) clearBtn.classList.add('hidden'); // 非表示
+                btn.innerHTML = '<span>✏️</span> メモ';
+                btn.classList.replace('bg-green-100', 'bg-blue-100');
+                btn.classList.replace('text-green-800', 'text-blue-600');
+            }
+        }
+
+        function resizeCanvas() {
+            const wrapper = document.getElementById('hissan-wrapper');
+            if(wrapper) {
+                const rect = wrapper.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+            }
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function startDraw(e) {
+            if (!state.isMemoMode) return;
+            isDrawing = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            if(e.cancelable) e.preventDefault(); 
+        }
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            if(e.cancelable) e.preventDefault();
+        }
+        function stopDraw() { isDrawing = false; }
+        function clearMemo() { 
+            if(ctx) ctx.clearRect(0,0,canvas.width,canvas.height); 
+        }
+
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', stopDraw);
+        canvas.addEventListener('touchstart', startDraw, {passive:false});
+        canvas.addEventListener('touchmove', draw, {passive:false});
+        window.addEventListener('touchend', stopDraw);
+
+        load();
+        window.addEventListener('resize', ()=> { if(state.isMemoMode) resizeCanvas(); });
+
+    </script>
+</body>
+</html>
